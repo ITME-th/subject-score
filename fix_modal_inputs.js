@@ -1,0 +1,11 @@
+const fs = require('fs');
+let file = 'src/components/courses/ScoreTable.tsx';
+let c = fs.readFileSync(file, 'utf8');
+
+const oldClass = 'className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"';
+const newClass = 'className="w-full border border-gray-300 rounded-xl p-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 outline-none font-medium bg-white shadow-sm"';
+
+c = c.replaceAll(oldClass, newClass);
+
+fs.writeFileSync(file, c);
+console.log('Fixed Modal Inputs in ScoreTable');

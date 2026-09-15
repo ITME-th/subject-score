@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String
+  courses   Course[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String
+  name        String
+  credits     Float
+  year        String
+  evalMode    String   @default("yearly") // yearly, termly
+  
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  
+  scores          Score[]
+  scoreCategories ScoreCategory[]
+  rooms           CourseRoom[]
+  enrollments     Enrollment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CourseRoom {
+  id        String @id @default(uuid())
+  roomName  String // ป.1/1
+  courseId  String
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Student {
+  id          String   @id @default(uuid())
+  studentId   String   @unique // รหัสประจำตัว
+  name        String
+  room        String   // ป.1/1
+  scores      Score[]
+  enrollments Enrollment[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Enrollment {
+  id        String  @id @default(uuid())
+  studentId String
+  courseId  String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+}
+
+model ScoreCategory {
+  id              String  @id @default(uuid())
+  name            String  // เช่น จิตพิสัย, สมุด, สอบกลางภาค
+  maxScore        Float   // เช่น 10, 20
+  term            Int     // 1 หรือ 2
+  applicableRooms String  @default("all") // ["ป.1/1", "ป.1/2"] or "all"
+  
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  scores    Score[]
+}
+
+model Score {
+  id              String        @id @default(uuid())
+  value           Float         @default(0)
+  
+  studentId       String
+  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  courseId        String
+  course          Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  scoreCategoryId String
+  scoreCategory   ScoreCategory @relation(fields: [scoreCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, scoreCategoryId])
+}
