@@ -76,7 +76,7 @@ export default function ScoreTable({ course }: { course: any }) {
         }
 
         startTransition(async () => {
-          const res = await importStudentsToCourse(course.id, formattedData);
+          const res = await importStudentsToCourse(course.id, formattedData as any);
           if (res.success) alert(`นำเข้านักเรียนสำเร็จ ${res.count} คน`);
           else alert(`นำเข้าไม่สำเร็จ: ${res.error}`);
         });
@@ -91,7 +91,7 @@ export default function ScoreTable({ course }: { course: any }) {
   // นำเข้าผ่านการ ก๊อปปี้/วาง (Copy & Paste)
   const handlePasteImport = () => {
     const lines = pasteText.trim().split('\n');
-    const formattedData = [];
+    const formattedData: any[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();

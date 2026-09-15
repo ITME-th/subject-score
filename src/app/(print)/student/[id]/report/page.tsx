@@ -21,7 +21,7 @@ export default async function ReportCardPage({ params }: { params: Promise<{ id:
       {/* ซ่อนปุ่มปรินต์เมื่อทำการสั่งพิมพ์ */}
       <div className="mb-6 flex justify-end print:hidden">
         <button 
-          onClick="window.print()" 
+          onClick={() => window.print()} 
           className="px-6 py-2 bg-emerald-600 text-white rounded-lg shadow-sm font-semibold hover:bg-emerald-700"
           // We can't use onClick directly in Server Component, so we'll use a tiny client script or just a plain button with onclick
           // Note: React 18 allows string onclick for some cases, but dangerouslySetInnerHTML is safer for inline scripts
