@@ -87,7 +87,7 @@ export default async function DashboardPage() {
               ยังไม่มีรายวิชา คุณสามารถเพิ่มรายวิชาได้ที่เมนู "รายวิชาที่สอน"
             </div>
           ) : (
-            <table className="w-full text-left">
+            <table className="hidden md:table w-full text-left">
               <thead>
                 <tr className="bg-white border-b border-gray-100 text-sm text-gray-500">
                   <th className="px-6 py-3 font-medium">รหัสวิชา</th>
@@ -121,6 +121,39 @@ export default async function DashboardPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile View */}
+            <div className="md:hidden grid grid-cols-1 divide-y divide-gray-100">
+              {recentCourses.map(course => (
+                <div key={course.id} className="p-5 flex flex-col space-y-3 hover:bg-gray-50/50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-base">{course.code}</h3>
+                      <p className="text-gray-600 font-medium text-sm mt-0.5">{course.name}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-1.5">
+                    {course.rooms.length === 0 ? (
+                      <span className="text-gray-400 text-xs">-</span>
+                    ) : (
+                      course.rooms.map(r => (
+                        <span key={r.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          {r.roomName}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                  
+                  <div className="pt-2 flex justify-end">
+                    <Link href={`/courses/${course.id}/scores`} className="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-sm font-semibold transition-colors">
+                      กรอกคะแนน
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           )}
         </div>
       </div>
