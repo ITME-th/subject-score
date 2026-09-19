@@ -1,76 +1,22 @@
 "use client";
 import Link from "next/link";
-import { useState, useRef, useTransition } from "react";
-import * as XLSX from "xlsx";
-import { importStudentsToCourse } from "@/app/actions/student";
-import { updateStudentScore, addScoreColumn, deleteScoreColumn } from "@/app/actions/score";
+import { useState, useRefif (formattedData.length === 0) {
+          alert("ไม่พบข้อมูลนักเรียน! โปรดตรวจสอบว่าไฟล์ Excel มีหัวคอลัมน์คำว่า 'รหัส', 'ชื่อ', และ 'ห้อง' หรือไม่");
+          return;
+        }
 
-export default function ScoreTable({ course }: { course: any }) {
-  const [isPending, startTransition] = useTransition();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // State สำหรับ Modal ก๊อปปี้/วาง
-  const [showPasteModal, setShowPasteModal] = useState(false);
-  const [pasteText, setPasteText] = useState("");
-
-  // State สำหรับ Modal เพิ่มช่องคะแนนด่วน
-  const [showAddColModal, setShowAddColModal] = useState(false);
-  const [newColTerm, setNewColTerm] = useState<1|2>(1);
-  const [newColName, setNewColName] = useState("");
-  const [newColMax, setNewColMax] = useState("");
-  const [newColRooms, setNewColRooms] = useState<string[]>([]);
-
-  // State สำหรับการกรองห้องเรียน
-  const [selectedRoom, setSelectedRoom] = useState<string>("all");
-  const [localOverrides, setLocalOverrides] = useState<Record<string, number>>({});
-  
-  // ข้อมูลที่มาจาก Server
-  const term1Categories = course.scoreCategories.filter((c: any) => c.term === 1 && (c.applicableRooms === "all" || (selectedRoom !== "all" ? JSON.parse(c.applicableRooms).includes(selectedRoom) : true)));
-  const term2Categories = course.scoreCategories.filter((c: any) => c.term === 2 && (c.applicableRooms === "all" || (selectedRoom !== "all" ? JSON.parse(c.applicableRooms).includes(selectedRoom) : true)));
-  const t1Max = term1Categories.reduce((acc: number, c: any) => acc + c.maxScore, 0);
-  const t2Max = term2Categories.reduce((acc: number, c: any) => acc + c.maxScore, 0);
-  
-  const students = course.enrollments.map((e: any) => ({
-    ...e.student,
-    scoreMap: e.student.scores.reduce((acc: any, s: any) => {
-      acc[s.scoreCategoryId] = s.value;
-      return acc;
-    }, {})
-  }));
-
-  const availableRooms = Array.from(new Set(students.map((s: any) => s.room))).filter(r => r && r !== "-").sort() as string[];
-  const filteredStudents = selectedRoom === "all" ? students : students.filter((s: any) => s.room === selectedRoom);
-
-  // นำเข้าผ่านไฟล์ Excel
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: "binary" });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
-        
-        const formattedData = data.map((row: any) => {
-          const keys = Object.keys(row);
-          const findKey = (keywords: string[]) => keys.find(k => keywords.some(kw => k.toLowerCase().includes(kw.toLowerCase())));
-          
-          const idKey = findKey(["รหัส", "id", "เลข", "ประจำตัว"]);
-          const nameKey = findKey(["ชื่อ", "name", "สกุล"]); 
-          const roomKey = findKey(["ห้อง", "ชั้น", "room", "class"]);
-
-          return {
-            id: idKey ? String(row[idKey]) : undefined,
-            name: nameKey ? String(row[nameKey]) : undefined,
-            room: roomKey ? String(row[roomKey]) : "-"
-          };
-        }).filter(r => r.id && r.name); 
-
-        if (formattedData.length === 0) {
+        setImportStatus({ isImporting: true, total: formattedData.length });
+        startTransition(async () => {
+          try {
+            const res = await importStudentsToCourse(course.id, formattedData as any);
+            if (res.success) alert(`นำเข้านักเรียนสำเร็จ ${formattedData.length} คน`);
+          } catch (error) {
+            alert("เกิดข้อผิดพลาดในการนำเข้าข้อมูล");
+          } finally {
+            setImportStatus({ isImporting: false, total: 0 });
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }
+        });if (formattedData.length === 0) {
           alert("ไม่พบข้อมูลนักเรียน! โปรดตรวจสอบว่าไฟล์ Excel มีหัวคอลัมน์คำว่า 'รหัส', 'ชื่อ', และ 'ห้อง' หรือไม่");
           return;
         }
@@ -657,6 +603,23 @@ export default function ScoreTable({ course }: { course: any }) {
           </span>
         </div>
       </div>
+    
+      {/* Import Loading Overlay */}
+      {importStatus.isImporting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">กำลังนำเข้าข้อมูล...</h3>
+            <p className="text-gray-500 text-center mb-1">
+              กำลังประมวลผลรายชื่อนักเรียนจำนวน <span className="font-bold text-emerald-600">{importStatus.total}</span> คน
+            </p>
+            <p className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full mt-3 font-medium">
+              ⚠️ กรุณารอสักครู่ ห้ามปิดหน้าจอนี้
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
