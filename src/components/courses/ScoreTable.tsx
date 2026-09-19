@@ -311,80 +311,7 @@ export default function ScoreTable({ course }: { course: any }) {
 
     // 2. ข้อมูลนักเรียน (Data Rows)
     const rows = filteredStudents.map((student: any, idx: number) => {
-      let t1Total = 0;
-      let t2Total = 0;
-      
-      const t1Scores = term1Categories.map((c: any) => {
-        const val = localOverrides[`${student.id}_${c.id}`] ?? student.scoreMap[c.id] ?? 0;
-        const isApplicable = c.applicableRooms === "all" || (c.applicableRooms && JSON.parse(c.applicableRooms).includes(student.room));
-        if(isApplicable) t1Total += val;
-        return isApplicable ? val : "-";
-      });
-      
-      const t2Scores = term2Categories.map((c: any) => {
-        const val = localOverrides[`${student.id}_${c.id}`] ?? student.scoreMap[c.id] ?? 0;
-        const isApplicable = c.applicableRooms === "all" || (c.applicableRooms && JSON.parse(c.applicableRooms).includes(student.room));
-        if(isApplicable) t2Total += val;
-        return isApplicable ? val : "-";
-      });
-
-      const total = t1Total + t2Total;
-      let grade = "0";
-      if (total >= 80) grade = "4";
-      else if (total >= 75) grade = "3.5";
-      else if (total >= 70) grade = "3";
-      else if (total >= 65) grade = "2.5";
-      else if (total >= 60) grade = "2";
-      else if (total >= 55) grade = "1.5";
-      else if (total >= 50) grade = "1";
-
-      return [
-        idx + 1,
-        student.studentId,
-        student.name,
-        ...t1Scores,
-        t1Total,
-        ...t2Scores,
-        t2Total,
-        total,
-        grade
-      ];
-    });
-
-    // 3. จัดฟอร์มเอกสารมาตรฐาน (Top Titles)
-    const roomText = selectedRoom === 'all' ? 'รวมทุกห้อง' : `ห้อง ${selectedRoom}`;
-    const finalData = [
-      ["แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายวิชา (ปพ.5)"],
-      [`รหัสวิชา: ${course.code}      ชื่อวิชา: ${course.name}      ปีการศึกษา: ${course.year}`],
-      [`ชั้นเรียน: ${roomText}      หน่วยกิต: ${course.credits}`],
-      [], // Blank row
-      dataHeaders,
-      ...rows
-    ];
-
-    const ws = XLSX.utils.aoa_to_sheet(finalData);
-
-    // 4. ตั้งค่าความกว้างคอลัมน์ (Column Widths)
-    const colWidths = [
-      { wch: 8 },  // ลำดับ
-      { wch: 15 }, // รหัสนักเรียน
-      { wch: 30 }, // ชื่อ-นามสกุล
-    ];
-    // เพิ่มความกว้างให้คอลัมน์คะแนน
-    for (let i = 3; i < dataHeaders.length; i++) {
-      colWidths.push({ wch: 12 });
-    }
-    ws['!cols'] = colWidths;
-
-    // 5. ผสานเซลล์หัวตาราง (Merge Title Cells)
-    const totalCols = dataHeaders.length;
-    ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }, // Title 1
-      { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }, // Title 2
-      { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } }, // Title 3
-    ];
-
-    // 6. สร้างไฟล์และดาวน์โหลด
+  // 6. สร้างไฟล์และดาวน์โหลด
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "แบบบันทึกผลการเรียน");
     
@@ -393,12 +320,12 @@ export default function ScoreTable({ course }: { course: any }) {
   return (
 
     <div className="max-w-[1400px] mx-auto space-y-6 pb-12 px-4 sm:px-6">
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
-        <div className="space-y-1 w-full xl:w-auto">
+      <div className="flex flex-col gap-6">
+        <div className="space-y-1 w-full">
           <Link href="/courses" className="text-sm text-gray-400 hover:text-gray-600 mb-2 inline-block">
             ← กลับไปหน้ารายวิชา
           </Link>
-          <div className="flex items-center space-x-4 mt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-2">
             <h1 className="text-2xl font-bold text-gray-900">กรอกคะแนน: {course.name} ({course.code})</h1>
             {availableRooms.length > 0 && (
               <select 
