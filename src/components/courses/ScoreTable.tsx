@@ -1,7 +1,91 @@
 "use client";
 import Link from "next/link";
-import { useState, useRefif (formattedData.length === 0) {
-          alert("ไม่พบข้อมูลนักเรียน! โปรดตรวจสอบว่าไฟล์ Excel มีหัวคอลัมน์คำว่า 'รหัส', 'ชื่อ', และ 'ห้อง' หรือไม่");
+import { useState, useRef, useTransition } from "react";
+import * as XLSX from "xlsx";
+import { importStudentsToCourse } from "@/app/actions/student";
+import { updateStudentScore, addScoreColumn, deleteScoreColumn } from "@/app/actions/score";
+
+export default function ScoreTable({ course }: { course: any }) {
+  const [isPending, startTransition] = useTransition();
+  const [importStatus, setImportStatus] = useState({ isImporting: false, total: 0 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State สำหรับ Modal ก๊อปปี้/วาง
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+
+  // State สำหรับ Modal เพิ่มช่องคะแนนด่วน
+  const [showAddColModal, setShowAddColModal] = useState(false);
+  const [newColTerm, setNewColTerm] = useState<1|2>(1);
+  const [newColName, setNewColName] = useState("");
+  const [newColMax, setNewColMax] = useState("");
+  const [newColRooms, setNewColRooms] = useState<string[]>([]);
+
+  // State สำหรับการกรองห้องเรียน
+  const [selectedRoom, setSelectedRoom] = useState<string>("all");
+  const [localOverrides, setLocalOverrides] = useState<Record<string, number>>({});
+  
+  // ข้อมูลที่มาจาก Server
+  const term1Categories = course.scoreCategories.filter((c: any) => c.term === 1 && (c.applicableRooms === "all" || (selectedRoom !== "all" ? JSON.parse(c.applicableRooms).includes(selectedRoom) : true)));
+  const term2Categories = course.scoreCategories.filter((c: any) => c.term === 2 && (c.applicableRooms === "all" || (selectedRoom !== "all" ? JSON.parse(c.applicableRooms).includes(selectedRoom) : true)));
+  const t1Max = term1Categories.reduce((acc: number, c: any) => acc + c.maxScore, 0);
+  const t2Max = term2Categories.reduce((acc: number, c: any) => acc + c.maxScore, 0);
+  
+  const students = course.enrollments.map((e: any) => ({
+    ...e.student,
+    scoreMap: e.student.scores.reduce((acc: any, s: any) => {
+      acc[s.scoreCategoryId] = s.value;
+      return acc;
+    }, {})
+  }));
+
+  const availableRooms = Array.from(new Set(students.map((s: any) => s.room))).filter(r => r && r !== "-").sort() as string[];
+  const filteredStudents = selectedRoom === "all" ? students : students.filter((s: any) => s.room === selectedRoom);
+
+  // นำเข้าผ่านไฟล์ Excel
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        let formattedData = data.map((row: any) => {
+          const keys = Object.keys(row);
+          const findKey = (keywords: string[]) => keys.find(k => keywords.some(kw => k.toLowerCase().includes(kw.toLowerCase())));
+          
+          const idKey = findKey(["รหัส", "id", "เลข", "ประจำตัว"]);
+          const nameKey = findKey(["ชื่อ", "name", "สกุล"]); 
+          const roomKey = findKey(["ห้อง", "ชั้น", "room", "class"]);
+
+          return {
+            id: idKey ? String(row[idKey]) : undefined,
+            name: nameKey ? String(row[nameKey]) : undefined,
+            room: roomKey ? String(row[roomKey]) : "-"
+          };
+        }).filter((r: any) => r.id && r.name); 
+
+        // Filter out rooms that are not assigned to this course
+        const allowedRooms = (course.rooms || []).map((r: any) => r.roomName);
+        const originalCount = formattedData.length;
+        
+        if (allowedRooms.length > 0) {
+          formattedData = formattedData.filter((r: any) => allowedRooms.includes(r.room));
+        }
+
+        if (formattedData.length === 0) {
+          if (originalCount > 0) {
+            alert(`คัดลอกรายชื่อมา ${originalCount} คน แต่ไม่มีใครอยู่ในห้องที่วิชานี้สอนเลยครับ (อนุญาตเฉพาะห้อง: ${allowedRooms.join(', ')})`);
+          } else {
+            alert("ไม่พบข้อมูลนักเรียน! โปรดตรวจสอบหัวคอลัมน์ Excel");
+          }
+          if (fileInputRef.current) fileInputRef.current.value = "";
           return;
         }
 
@@ -9,46 +93,43 @@ import { useState, useRefif (formattedData.length === 0) {
         startTransition(async () => {
           try {
             const res = await importStudentsToCourse(course.id, formattedData as any);
-            if (res.success) alert(`นำเข้านักเรียนสำเร็จ ${formattedData.length} คน`);
-          } catch (error) {
-            alert("เกิดข้อผิดพลาดในการนำเข้าข้อมูล");
+            if (res.success) {
+              if (originalCount > formattedData.length) {
+                alert(`นำเข้านักเรียนสำเร็จ ${formattedData.length} คน\n(ข้ามเด็กห้องอื่น ${originalCount - formattedData.length} คนที่ไม่ได้เรียนวิชานี้)`);
+              } else {
+                alert(`นำเข้านักเรียนสำเร็จ ${formattedData.length} คน`);
+              }
+            } else {
+              alert(`นำเข้าไม่สำเร็จ: ${res.error}`);
+            }
+          } catch (err) {
+            alert("เกิดข้อผิดพลาดในการนำเข้า");
           } finally {
             setImportStatus({ isImporting: false, total: 0 });
-            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (fileInputRef.current) fileInputRef.current.value = "";
           }
-        });if (formattedData.length === 0) {
-          alert("ไม่พบข้อมูลนักเรียน! โปรดตรวจสอบว่าไฟล์ Excel มีหัวคอลัมน์คำว่า 'รหัส', 'ชื่อ', และ 'ห้อง' หรือไม่");
-          return;
-        }
-
-        startTransition(async () => {
-          const res = await importStudentsToCourse(course.id, formattedData as any);
-          if (res.success) alert(`นำเข้านักเรียนสำเร็จ ${res.count} คน`);
-          else alert(`นำเข้าไม่สำเร็จ: ${res.error}`);
         });
       } catch (err) {
         alert("ไฟล์ Excel ไม่ถูกต้อง");
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
     };
     reader.readAsBinaryString(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // นำเข้าผ่านการ ก๊อปปี้/วาง (Copy & Paste)
   const handlePasteImport = () => {
     const lines = pasteText.trim().split('\n');
-    const formattedData: any[] = [];
+    let formattedData: any[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // แยกด้วย Tab (ค่าเริ่มต้นของ Excel), เครื่องหมายคอมมา, หรือช่องว่างหลายๆ ช่อง
       let cols = line.split('\t');
       if (cols.length < 2) cols = line.split(','); 
       if (cols.length < 2) cols = line.split(/\s{2,}/); 
 
-      // ถ้าเป็นบรรทัดแรกและเป็นชื่อหัวคอลัมน์ให้ข้ามไป
       if (i === 0 && (cols[0].includes('รหัส') || cols[1]?.includes('ชื่อ'))) {
         continue;
       }
@@ -62,19 +143,42 @@ import { useState, useRefif (formattedData.length === 0) {
       }
     }
 
+    const allowedRooms = (course.rooms || []).map((r: any) => r.roomName);
+    const originalCount = formattedData.length;
+    
+    if (allowedRooms.length > 0) {
+      formattedData = formattedData.filter((r: any) => allowedRooms.includes(r.room));
+    }
+
     if (formattedData.length === 0) {
-      alert("ไม่พบรูปแบบข้อมูลที่ถูกต้อง กรุณาวางข้อมูลที่มีอย่างน้อย 2 คอลัมน์ (รหัส, ชื่อ)");
+      if (originalCount > 0) {
+        alert(`คัดลอกรายชื่อมา ${originalCount} คน แต่ไม่มีใครอยู่ในห้องที่วิชานี้สอนเลยครับ (อนุญาตเฉพาะห้อง: ${allowedRooms.join(', ')})`);
+      } else {
+        alert("ไม่พบรูปแบบข้อมูลที่ถูกต้อง กรุณาวางข้อมูลที่มีอย่างน้อย 2 คอลัมน์ (รหัส, ชื่อ)");
+      }
       return;
     }
 
+    setShowPasteModal(false);
+    setImportStatus({ isImporting: true, total: formattedData.length });
+    
     startTransition(async () => {
-      const res = await importStudentsToCourse(course.id, formattedData);
-      if (res.success) {
-         alert(`เพิ่มนักเรียนสำเร็จ ${res.count} คน`);
-         setShowPasteModal(false);
-         setPasteText("");
-      } else {
-         alert(`เพิ่มไม่สำเร็จ: ${res.error}`);
+      try {
+        const res = await importStudentsToCourse(course.id, formattedData);
+        if (res.success) {
+          if (originalCount > formattedData.length) {
+            alert(`เพิ่มนักเรียนสำเร็จ ${formattedData.length} คน\n(ข้ามเด็กห้องอื่น ${originalCount - formattedData.length} คนที่ไม่ได้เรียนวิชานี้)`);
+          } else {
+            alert(`เพิ่มนักเรียนสำเร็จ ${formattedData.length} คน`);
+          }
+          setPasteText("");
+        } else {
+          alert(`เพิ่มไม่สำเร็จ: ${res.error}`);
+        }
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการนำเข้า");
+      } finally {
+        setImportStatus({ isImporting: false, total: 0 });
       }
     });
   };
@@ -606,15 +710,16 @@ import { useState, useRefif (formattedData.length === 0) {
     
       {/* Import Loading Overlay */}
       {importStatus.isImporting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
           <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 animate-in fade-in zoom-in duration-200">
             <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">กำลังนำเข้าข้อมูล...</h3>
             <p className="text-gray-500 text-center mb-1">
-              กำลังประมวลผลรายชื่อนักเรียนจำนวน <span className="font-bold text-emerald-600">{importStatus.total}</span> คน
+              กำลังบันทึกรายชื่อนักเรียน <span className="font-bold text-emerald-600">{importStatus.total}</span> คน
             </p>
-            <p className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full mt-3 font-medium">
-              ⚠️ กรุณารอสักครู่ ห้ามปิดหน้าจอนี้
+            <p className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg mt-4 font-medium flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              กรุณารอสักครู่ ห้ามปิดหน้าจอนี้
             </p>
           </div>
         </div>

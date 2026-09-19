@@ -8,6 +8,7 @@ export default async function ScoreEntryPage({ params }: { params: Promise<{ id:
   const course = await prisma.course.findUnique({
     where: { id: resolvedParams.id },
     include: {
+      rooms: true,
       scoreCategories: {
         orderBy: { id: 'asc' }
       },
