@@ -311,7 +311,80 @@ export default function ScoreTable({ course }: { course: any }) {
 
     // 2. ข้อมูลนักเรียน (Data Rows)
     const rows = filteredStudents.map((student: any, idx: number) => {
-  // 6. สร้างไฟล์และดาวน์โหลด
+      let t1Total = 0;
+      let t2Total = 0;
+      
+      const t1Scores = term1Categories.map((c: any) => {
+        const val = localOverrides[`${student.id}_${c.id}`] ?? student.scoreMap[c.id] ?? 0;
+        const isApplicable = c.applicableRooms === "all" || (c.applicableRooms && JSON.parse(c.applicableRooms).includes(student.room));
+        if(isApplicable) t1Total += val;
+        return isApplicable ? val : "-";
+      });
+      
+      const t2Scores = term2Categories.map((c: any) => {
+        const val = localOverrides[`${student.id}_${c.id}`] ?? student.scoreMap[c.id] ?? 0;
+        const isApplicable = c.applicableRooms === "all" || (c.applicableRooms && JSON.parse(c.applicableRooms).includes(student.room));
+        if(isApplicable) t2Total += val;
+        return isApplicable ? val : "-";
+      });
+
+      const total = t1Total + t2Total;
+      let grade = "0";
+      if (total >= 80) grade = "4";
+      else if (total >= 75) grade = "3.5";
+      else if (total >= 70) grade = "3";
+      else if (total >= 65) grade = "2.5";
+      else if (total >= 60) grade = "2";
+      else if (total >= 55) grade = "1.5";
+      else if (total >= 50) grade = "1";
+
+      return [
+        idx + 1,
+        student.studentId,
+        student.name,
+        ...t1Scores,
+        t1Total,
+        ...t2Scores,
+        t2Total,
+        total,
+        grade
+      ];
+    });
+
+    // 3. จัดฟอร์มเอกสารมาตรฐาน (Top Titles)
+    const roomText = selectedRoom === 'all' ? 'รวมทุกห้อง' : `ห้อง ${selectedRoom}`;
+    const finalData = [
+      ["แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายวิชา (ปพ.5)"],
+      [`รหัสวิชา: ${course.code}      ชื่อวิชา: ${course.name}      ปีการศึกษา: ${course.year}`],
+      [`ชั้นเรียน: ${roomText}      หน่วยกิต: ${course.credits}`],
+      [], // Blank row
+      dataHeaders,
+      ...rows
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(finalData);
+
+    // 4. ตั้งค่าความกว้างคอลัมน์ (Column Widths)
+    const colWidths = [
+      { wch: 8 },  // ลำดับ
+      { wch: 15 }, // รหัสนักเรียน
+      { wch: 30 }, // ชื่อ-นามสกุล
+    ];
+    // เพิ่มความกว้างให้คอลัมน์คะแนน
+    for (let i = 3; i < dataHeaders.length; i++) {
+      colWidths.push({ wch: 12 });
+    }
+    ws['!cols'] = colWidths;
+
+    // 5. ผสานเซลล์หัวตาราง (Merge Title Cells)
+    const totalCols = dataHeaders.length;
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }, // Title 1
+      { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }, // Title 2
+      { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } }, // Title 3
+    ];
+
+    // 6. สร้างไฟล์และดาวน์โหลด
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "แบบบันทึกผลการเรียน");
     
@@ -331,7 +404,7 @@ export default function ScoreTable({ course }: { course: any }) {
               <select 
                 value={selectedRoom}
                 onChange={(e) => setSelectedRoom(e.target.value)}
-                className="bg-white border border-gray-300 text-gray-700 py-1.5 px-3 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm cursor-pointer"
+                className="bg-white border border-gray-300 text-gray-700 py-1.5 px-3 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm cursor-pointer w-fit"
               >
                 <option value="all">แสดงทุกห้องเรียน</option>
                 {availableRooms.map((r: string) => (
@@ -339,18 +412,19 @@ export default function ScoreTable({ course }: { course: any }) {
                 ))}
               </select>
             )}
-            <button
-              onClick={exportToExcel}
-              className="flex items-center space-x-1.5 bg-white border border-gray-300 text-gray-700 py-1.5 px-3 rounded-lg text-sm hover:bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm transition-colors"
-            >
-              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              <span>ดาวน์โหลด Excel</span>
-            </button>
-
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-3 w-full xl:w-auto">
+        {/* Action Buttons Scrollable Row */}
+        <div className="flex flex-nowrap overflow-x-auto pb-4 gap-3 w-full snap-x hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <button
+            onClick={exportToExcel}
+            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm transition-colors snap-start"
+          >
+            <span className="text-2xl">📊</span>
+            <span className="text-sm font-medium text-center">ดาวน์โหลด<br/>Excel</span>
+          </button>
+          
           <input 
             type="file" 
             accept=".xlsx, .xls, .csv" 
@@ -361,27 +435,30 @@ export default function ScoreTable({ course }: { course: any }) {
           <button 
             onClick={() => setShowPasteModal(true)}
             disabled={isPending}
-            className="flex-1 sm:flex-none justify-center items-center space-x-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg font-medium shadow-sm transition-all text-sm"
+            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl font-medium shadow-sm transition-all snap-start disabled:opacity-50"
           >
-            <span className="hidden sm:inline">📋</span> วางรายชื่อ
+            <span className="text-2xl">📋</span>
+            <span className="text-sm font-medium text-center">วางรายชื่อ<br/>(Copy/Paste)</span>
           </button>
+          
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isPending}
-            className="flex-1 sm:flex-none justify-center items-center space-x-2 px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg font-medium shadow-sm transition-all text-sm"
+            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-xl font-medium shadow-sm transition-all snap-start disabled:opacity-50"
           >
-            <span className="hidden sm:inline">📥</span> นำเข้า Excel
+            <span className="text-2xl">📥</span>
+            <span className="text-sm font-medium text-center">นำเข้าจาก<br/>Excel</span>
           </button>
           
           <button 
             onClick={handleClearAllStudents}
             disabled={isPending || students.length === 0}
-            className="flex-1 sm:flex-none justify-center items-center space-x-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium shadow-sm transition-all text-sm"
+            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 rounded-xl font-medium shadow-sm transition-all snap-start disabled:opacity-50 disabled:cursor-not-allowed"
             title="ลบนักเรียนและคะแนนทั้งหมดในวิชานี้เพื่อเริ่มใหม่"
           >
-            <span className="hidden sm:inline">🗑️</span> ล้างรายชื่อ
+            <span className="text-2xl opacity-80">🗑️</span>
+            <span className="text-sm font-medium text-center">ล้างรายชื่อ<br/>ทั้งหมด</span>
           </button>
-
         </div>
       </div>
 
