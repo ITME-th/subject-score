@@ -136,7 +136,6 @@ export default async function CoursesPage() {
         </div>
 
       </div>
-      </div>
     </div>
   );
 }

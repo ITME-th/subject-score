@@ -87,6 +87,7 @@ export default async function DashboardPage() {
               ยังไม่มีรายวิชา คุณสามารถเพิ่มรายวิชาได้ที่เมนู "รายวิชาที่สอน"
             </div>
           ) : (
+            <>
             <table className="hidden md:table w-full text-left">
               <thead>
                 <tr className="bg-white border-b border-gray-100 text-sm text-gray-500">
@@ -153,7 +154,7 @@ export default async function DashboardPage() {
                 </div>
               ))}
             </div>
-
+            </>
           )}
         </div>
       </div>
