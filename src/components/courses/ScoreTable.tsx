@@ -448,8 +448,7 @@ export default function ScoreTable({ course }: { course: any }) {
           >
             <span>📥 นำเข้าจาก Excel</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-lg font-medium shadow-sm transition-all">
-            <span>📤 ส่งออก ปพ.5</span></button>
+          
           <button 
             onClick={handleClearAllStudents}
             disabled={isPending || students.length === 0}
