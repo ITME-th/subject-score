@@ -449,8 +449,16 @@ export default function ScoreTable({ course }: { course: any }) {
             <span>📥 นำเข้าจาก Excel</span>
           </button>
           <button className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-lg font-medium shadow-sm transition-all">
-            <span>📤 ส่งออก ปพ.5</span>
+            <span>📤 ส่งออก ปพ.5</span></button>
+          <button 
+            onClick={handleClearAllStudents}
+            disabled={isPending || students.length === 0}
+            className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium shadow-sm transition-all"
+            title="ลบนักเรียนและคะแนนทั้งหมดในวิชานี้เพื่อเริ่มใหม่"
+          >
+            <span>🗑️ ล้างรายชื่อทั้งหมด</span>
           </button>
+
         </div>
       </div>
 
