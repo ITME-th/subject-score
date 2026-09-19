@@ -415,14 +415,14 @@ export default function ScoreTable({ course }: { course: any }) {
           </div>
         </div>
         
-        {/* Action Buttons Scrollable Row */}
-        <div className="flex flex-nowrap overflow-x-auto pb-4 gap-3 w-full snap-x hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {/* Action Buttons Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 w-full">
           <button
             onClick={exportToExcel}
-            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm transition-colors snap-start"
+            className="flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-4 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm transition-colors"
           >
-            <span className="text-2xl">📊</span>
-            <span className="text-sm font-medium text-center">ดาวน์โหลด<br/>Excel</span>
+            <span className="text-xl sm:text-2xl">📊</span>
+            <span className="text-[11px] sm:text-sm font-medium text-center">ดาวน์โหลด<br/>Excel</span>
           </button>
           
           <input 
@@ -435,29 +435,29 @@ export default function ScoreTable({ course }: { course: any }) {
           <button 
             onClick={() => setShowPasteModal(true)}
             disabled={isPending}
-            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl font-medium shadow-sm transition-all snap-start disabled:opacity-50"
+            className="flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-4 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl font-medium shadow-sm transition-all disabled:opacity-50"
           >
-            <span className="text-2xl">📋</span>
-            <span className="text-sm font-medium text-center">วางรายชื่อ<br/>(Copy/Paste)</span>
+            <span className="text-xl sm:text-2xl">📋</span>
+            <span className="text-[11px] sm:text-sm font-medium text-center">วางรายชื่อ<br/>(Copy/Paste)</span>
           </button>
           
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isPending}
-            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-xl font-medium shadow-sm transition-all snap-start disabled:opacity-50"
+            className="flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-4 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-xl font-medium shadow-sm transition-all disabled:opacity-50"
           >
-            <span className="text-2xl">📥</span>
-            <span className="text-sm font-medium text-center">นำเข้าจาก<br/>Excel</span>
+            <span className="text-xl sm:text-2xl">📥</span>
+            <span className="text-[11px] sm:text-sm font-medium text-center">นำเข้าจาก<br/>Excel</span>
           </button>
           
           <button 
             onClick={handleClearAllStudents}
             disabled={isPending || students.length === 0}
-            className="min-w-[120px] flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 rounded-xl font-medium shadow-sm transition-all snap-start disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-4 bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 rounded-xl font-medium shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="ลบนักเรียนและคะแนนทั้งหมดในวิชานี้เพื่อเริ่มใหม่"
           >
-            <span className="text-2xl opacity-80">🗑️</span>
-            <span className="text-sm font-medium text-center">ล้างรายชื่อ<br/>ทั้งหมด</span>
+            <span className="text-xl sm:text-2xl opacity-80">🗑️</span>
+            <span className="text-[11px] sm:text-sm font-medium text-center">ล้างรายชื่อ<br/>ทั้งหมด</span>
           </button>
         </div>
       </div>
