@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useTransition } from "react";
 import * as XLSX from "xlsx";
-import { importStudentsToCourse } from "@/app/actions/student";
+import { importStudentsToCourse, removeAllStudentsFromCourse } from "@/app/actions/student";
 import { updateStudentScore, addScoreColumn, deleteScoreColumn } from "@/app/actions/score";
 
 export default function ScoreTable({ course }: { course: any }) {
@@ -179,6 +179,21 @@ export default function ScoreTable({ course }: { course: any }) {
         alert("เกิดข้อผิดพลาดในการนำเข้า");
       } finally {
         setImportStatus({ isImporting: false, total: 0 });
+      }
+    });
+  };
+
+  
+  const handleClearAllStudents = () => {
+    if (!window.confirm("⚠️ ยืนยันการลบรายชื่อนักเรียนทั้งหมดในวิชานี้?\n\n(คะแนนที่เคยกรอกไว้จะถูกลบทั้งหมดและไม่สามารถกู้คืนได้)")) return;
+    
+    startTransition(async () => {
+      try {
+        const res = await removeAllStudentsFromCourse(course.id);
+        if (res.success) alert("ลบรายชื่อนักเรียนทั้งหมดสำเร็จ");
+        else alert("เกิดข้อผิดพลาด: " + res.error);
+      } catch(e) {
+        alert("เกิดข้อผิดพลาด");
       }
     });
   };
