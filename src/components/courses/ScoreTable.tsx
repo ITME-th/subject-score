@@ -390,14 +390,11 @@ export default function ScoreTable({ course }: { course: any }) {
     
     // ตั้งชื่อไฟล์ให้ดูเป็นทางการ
     const fileName = `แบบบันทึกผลการเรียน_${course.code}_${roomText.replace('/', '-')}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-  };
-
   return (
 
-    <div className="max-w-[1400px] mx-auto space-y-6 pb-12">
-      <div className="flex justify-between items-end">
-        <div className="space-y-1">
+    <div className="max-w-[1400px] mx-auto space-y-6 pb-12 px-4 sm:px-6">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
+        <div className="space-y-1 w-full xl:w-auto">
           <Link href="/courses" className="text-sm text-gray-400 hover:text-gray-600 mb-2 inline-block">
             ← กลับไปหน้ารายวิชา
           </Link>
@@ -426,7 +423,7 @@ export default function ScoreTable({ course }: { course: any }) {
           </div>
         </div>
         
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap gap-3 w-full xl:w-auto">
           <input 
             type="file" 
             accept=".xlsx, .xls, .csv" 
@@ -437,25 +434,25 @@ export default function ScoreTable({ course }: { course: any }) {
           <button 
             onClick={() => setShowPasteModal(true)}
             disabled={isPending}
-            className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg font-medium shadow-sm transition-all"
+            className="flex-1 sm:flex-none justify-center items-center space-x-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg font-medium shadow-sm transition-all text-sm"
           >
-            <span>📋 วางรายชื่อ (Copy/Paste)</span>
+            <span className="hidden sm:inline">📋</span> วางรายชื่อ
           </button>
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isPending}
-            className="flex items-center space-x-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg font-medium shadow-sm transition-all"
+            className="flex-1 sm:flex-none justify-center items-center space-x-2 px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg font-medium shadow-sm transition-all text-sm"
           >
-            <span>📥 นำเข้าจาก Excel</span>
+            <span className="hidden sm:inline">📥</span> นำเข้า Excel
           </button>
           
           <button 
             onClick={handleClearAllStudents}
             disabled={isPending || students.length === 0}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium shadow-sm transition-all"
+            className="flex-1 sm:flex-none justify-center items-center space-x-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium shadow-sm transition-all text-sm"
             title="ลบนักเรียนและคะแนนทั้งหมดในวิชานี้เพื่อเริ่มใหม่"
           >
-            <span>🗑️ ล้างรายชื่อทั้งหมด</span>
+            <span className="hidden sm:inline">🗑️</span> ล้างรายชื่อ
           </button>
 
         </div>
