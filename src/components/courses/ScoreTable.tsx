@@ -398,8 +398,8 @@ export default function ScoreTable({ course }: { course: any }) {
           <Link href="/courses" className="text-sm text-gray-400 hover:text-gray-600 mb-2 inline-block">
             ← กลับไปหน้ารายวิชา
           </Link>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-2">
-            <h1 className="text-2xl font-bold text-gray-900">กรอกคะแนน: {course.name} ({course.code})</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mt-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">กรอกคะแนน: {course.name} ({course.code})</h1>
             {availableRooms.length > 0 && (
               <select 
                 value={selectedRoom}
@@ -580,15 +580,17 @@ export default function ScoreTable({ course }: { course: any }) {
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-200 text-sm text-gray-700 divide-x divide-gray-200">
-                <th colSpan={3} className="px-4 py-2 text-center bg-gray-50">ข้อมูลนักเรียน</th>
+                <th className="px-4 py-2 text-center bg-gray-50 w-12 hidden sm:table-cell">ลำดับ</th>
+                <th className="px-4 py-2 text-center bg-gray-50 w-24 hidden sm:table-cell">รหัส</th>
+                <th className="px-4 py-2 text-center bg-gray-50 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">ข้อมูลนักเรียน</th>
                 <th colSpan={term1Categories.length + 2} className="px-4 py-2 text-center bg-emerald-50">เทอม 1 ({t1Max} คะแนน)</th>
                 <th colSpan={term2Categories.length + 2} className="px-4 py-2 text-center bg-teal-50">เทอม 2 ({t2Max} คะแนน)</th>
                 <th colSpan={2} className="px-4 py-2 text-center bg-gray-200">สรุปผลรวม</th>
               </tr>
               <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-600 divide-x divide-gray-200">
-                <th className="px-4 py-3 font-medium text-center w-12">ลำดับ</th>
-                <th className="px-4 py-3 font-medium w-24">รหัส</th>
-                <th className="px-4 py-3 font-medium min-w-[200px]">ชื่อ-นามสกุล</th>
+                <th className="px-4 py-3 font-medium text-center w-12 hidden sm:table-cell">ลำดับ</th>
+                <th className="px-4 py-3 font-medium w-24 hidden sm:table-cell">รหัส</th>
+                <th className="px-4 py-3 font-medium min-w-[140px] sm:min-w-[200px] sticky left-0 z-20 bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">ชื่อ-นามสกุล</th>
                 
                 {term1Categories.map((cat: any) => (
                   <th key={cat.id} className="px-4 py-2 font-medium text-center bg-emerald-50/50 relative group min-w-[80px]">
@@ -650,10 +652,15 @@ export default function ScoreTable({ course }: { course: any }) {
                   let t2Total = 0;
 
                   return (
-                    <tr key={student.id} className="hover:bg-emerald-50/30 transition-colors divide-x divide-gray-100 text-sm">
-                      <td className="px-4 py-2 text-center text-gray-500">{idx + 1}</td>
-                      <td className="px-4 py-2 text-gray-500">{student.studentId}</td>
-                      <td className="px-4 py-2 font-medium text-gray-900">{student.name}</td>
+                    <tr key={student.id} className="hover:bg-emerald-50/30 transition-colors divide-x divide-gray-100 text-sm group/row">
+                      <td className="px-4 py-2 text-center text-gray-500 hidden sm:table-cell">{idx + 1}</td>
+                      <td className="px-4 py-2 text-gray-500 hidden sm:table-cell">{student.studentId}</td>
+                      <td className="px-4 py-2 font-medium text-gray-900 sticky left-0 z-10 bg-white group-hover/row:bg-emerald-50/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] transition-colors">
+                        <div className="flex flex-col">
+                          <span>{student.name}</span>
+                          <span className="text-[10px] text-gray-400 sm:hidden">รหัส: {student.studentId}</span>
+                        </div>
+                      </td>
                       
                       {term1Categories.map((cat: any, cIdx: number) => {
                         const isApplicable = cat.applicableRooms === "all" || (cat.applicableRooms && JSON.parse(cat.applicableRooms).includes(student.room));
@@ -722,9 +729,9 @@ export default function ScoreTable({ course }: { course: any }) {
           </table>
         </div>
         
-        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center text-sm text-gray-500">
+        <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 text-sm text-gray-500">
           <span>แสดงนักเรียนทั้งหมด {filteredStudents.length} คน</span>
-          <span className="text-green-600 flex items-center space-x-1">
+          <span className="text-green-600 flex items-center space-x-1 bg-green-50/50 sm:bg-transparent px-3 py-1 sm:p-0 rounded-full sm:rounded-none">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
             <span>ระบบบันทึกคะแนนอัตโนมัติเมื่อพิมพ์เสร็จ</span>
           </span>
